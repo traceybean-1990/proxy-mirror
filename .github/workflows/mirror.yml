@@ -1,0 +1,28 @@
+name: Proxy Auto Update
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Автозапуск на серверах GitHub каждые 5 минут
+  workflow_dispatch: # Кнопка для ручного запуска в панели
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Дает право роботу изменять файлы в репозитории
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v4
+
+    - name: Download fresh proxies
+      run: |
+        # Скачиваем прокси с маскировкой под обычный браузер Chrome
+        curl -s -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "https://api.best-proxies.ru/proxylist.txt?key=c7a02ed5f12daac9c7ed1f514ad4cc84&limit=0" -o proxies.txt
+
+    - name: Commit and Push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add proxies.txt
+        # Проверяем, изменились ли прокси, и если да — сохраняем их
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update proxies list" && git push)
